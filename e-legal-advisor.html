@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E‑Legal Advisor – Pakistan AI Legal Assistant</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0a1930;
+      min-height: 100vh;
+    }
+    
+    /* MAIN APP - Always visible (no login required) */
+    .app-container {
+      display: flex;
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 280px;
+      background: linear-gradient(180deg, #0d1b3e 0%, #0a1530 100%);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 12px;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+      overflow-y: auto;
+      box-shadow: 4px 0 25px rgba(0,0,0,0.3);
+      border-right: 2px solid rgba(124,77,255,0.3);
+      transition: left 0.3s ease;
+    }
+    .sidebar-logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      padding-left: 10px;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+    }
+    .sidebar-logo span { color: #7c4dff; }
+    .user-info-side {
+      background: rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .user-avatar-side {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: #7c4dff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .nav-menu { list-style: none; flex: 1; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      margin-bottom: 3px;
+      cursor: pointer;
+      transition: 0.2s;
+      color: rgba(255,255,255,0.75);
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    .nav-item:hover, .nav-item.active {
+      background: rgba(124,77,255,0.2);
+      color: white;
+    }
+    .nav-item.active {
+      background: rgba(124,77,255,0.35);
+      border-left: 3px solid #7c4dff;
+    }
+    .lang-submenu {
+      display: none;
+      padding-left: 20px;
+      margin-bottom: 10px;
+    }
+    .lang-option {
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: rgba(255,255,255,0.7);
+      transition: 0.2s;
+    }
+    .lang-option:hover, .lang-option.selected {
+      background: rgba(124,77,255,0.3);
+      color: white;
+    }
+
+    /* MAIN */
+    .main {
+      margin-left: 280px;
+      flex: 1;
+      padding: 24px 28px;
+      background: #f0f2f5;
+      min-height: 100vh;
+    }
+    .page { display: none; animation: fade 0.3s; }
+    .page.active { display: block; }
+    @keyframes fade { from { opacity: 0; transform: translateY(8px); } }
+
+    /* CARDS */
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      margin-bottom: 24px;
+    }
+    .card-header {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #0a1930;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: 0.2s;
+      background: #0a1930;
+      color: white;
+      font-family: inherit;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 2px solid #0a1930;
+      color: #0a1930;
+    }
+    .btn-accent { background: #7c4dff; }
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      margin: 6px 0;
+      font-family: inherit;
+    }
+    input:focus, textarea:focus, select:focus { border-color: #7c4dff; outline: none; }
+
+    .home-search-area { text-align: center; margin-bottom: 20px; }
+    .home-search-area h2 { font-size: 2rem; color: #0a1930; margin-bottom: 6px; }
+    .home-search-area p { color: #555; margin-bottom: 14px; }
+    .search-bar { display: flex; max-width: 550px; margin: 0 auto 14px; gap: 8px; }
+    .search-bar input { flex:1; padding:14px 20px; border-radius:30px; border:2px solid #e0e0e0; font-size:1rem; background:#f8f9fa; }
+    .quick-keywords { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; max-width:550px; margin:0 auto; }
+    .quick-keyword { padding:8px 16px; border-radius:20px; background:#f0f0f0; border:none; cursor:pointer; font-size:0.85rem; transition:0.2s; color:#0a1930; font-weight:500; }
+    .quick-keyword:hover { background:#7c4dff; color:white; }
+
+    .chat-messages { height:350px; overflow-y:auto; background:#f8f9fc; border-radius:12px; padding:16px; margin-bottom:12px; border:1px solid #e2e8f0; }
+    .message { display:flex; gap:8px; margin-bottom:12px; animation:slideIn 0.3s ease; }
+    @keyframes slideIn { from{opacity:0;transform:translateY(10px);} }
+    .user-msg { justify-content:flex-end; }
+    .bot-msg { justify-content:flex-start; }
+    .msg-bubble { max-width:80%; padding:10px 16px; border-radius:18px; line-height:1.5; font-size:0.9rem; background:white; border:1px solid #e2e8f0; }
+    .user-msg .msg-bubble { background:#0a1930; color:white; border-bottom-right-radius:4px; }
+    .bot-msg .msg-bubble { border-bottom-left-radius:4px; }
+
+    .risk-high { background:#ffeaea; border-left:4px solid #e74c3c; padding:16px; border-radius:8px; margin-top:10px; }
+    .risk-medium { background:#fff3e0; border-left:4px solid #f39c12; padding:16px; border-radius:8px; margin-top:10px; }
+    .risk-low { background:#eafaf1; border-left:4px solid #2ecc71; padding:16px; border-radius:8px; margin-top:10px; }
+
+    .draft-tabs { display:flex; gap:10px; margin-bottom:20px; }
+    .draft-tab { padding:8px 20px; border-radius:30px; font-weight:600; cursor:pointer; border:2px solid #0a1930; background:transparent; color:#0a1930; transition:0.2s; }
+    .draft-tab.active { background:#0a1930; color:white; }
+    .fir-field { margin-bottom:16px; }
+    .fir-field label { font-weight:600; display:block; margin-bottom:4px; color:#0a1930; }
+    .saved-draft-item { background:#f8f9ff; padding:16px; border-radius:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; border:1px solid #e2e8f0; }
+    .saved-draft-item button { background:#e74c3c; color:white; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; }
+    .saved-draft-item .view-btn { background:#3498db; margin-right:6px; }
+
+    .category-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:16px; margin-bottom:24px; }
+    .category-card { background:#f4f6fb; border-radius:12px; padding:20px; cursor:pointer; transition:0.2s; border:2px solid transparent; text-align:center; }
+    .category-card:hover, .category-card.selected { border-color:#7c4dff; background:white; box-shadow:0 4px 12px rgba(0,0,0,0.05); }
+    .topic-section { background:#f9fafc; border-radius:12px; padding:20px; margin-bottom:16px; border-left:4px solid #7c4dff; }
+    .penalty-box { background:#fff3e0; border-left:4px solid #ff9800; padding:12px 16px; border-radius:8px; margin-top:12px; font-weight:500; }
+
+    .helpline-card { background:#f8f9ff; padding:20px 24px; border-radius:12px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+    .helpline-number { font-size:1.5rem; font-weight:800; color:#0a1930; }
+
+    .reasoning-panel { margin-top:16px; background:#f1f5f9; border-radius:14px; padding:18px; border-left:4px solid #7c4dff; }
+    .reason-step { margin-bottom:10px; padding-left:14px; border-left:3px solid #7c4dff; }
+
+    .mobile-toggle {
+      display: none;
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 200;
+      background: #0a1930;
+      color: white;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 1.3rem;
+      cursor: pointer;
+    }
+
+    @media (max-width:768px) {
+      .sidebar { left: -280px; }
+      .sidebar.open { left: 0; }
+      .main { margin-left: 0; }
+      .mobile-toggle { display: block; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container" id="appContainer">
+  <button class="mobile-toggle" id="mobileToggle">☰</button>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">⚖️ E-<span>Legal</span> Advisor</div>
+    <div class="user-info-side">
+      <div class="user-avatar-side">⚖️</div>
+      <div><strong>Legal Assistant</strong><br><small style="font-size:0.7rem;">Pakistan Laws</small></div>
+    </div>
+    <ul class="nav-menu">
+      <li class="nav-item active" data-page="home"><span>🏠</span> <span>Home</span></li>
+      <li class="nav-item" data-page="consult"><span>🤖</span> <span>Consult</span></li>
+      <li class="nav-item" data-page="learner"><span>🎓</span> <span>Learner Mode</span></li>
+      <li class="nav-item" data-page="firdraft"><span>📄</span> <span>FIR Draft Generator</span></li>
+      <li class="nav-item" data-page="helplines"><span>📞</span> <span>Helplines</span></li>
+      <li class="nav-item" data-page="offline"><span>📡</span> <span>Offline Mode</span></li>
+      <li class="nav-item" data-page="riskdetect"><span>⚠️</span> <span>Risk Detection</span></li>
+      <li class="nav-item" data-page="quiz"><span>📝</span> <span>Quiz</span></li>
+      <li class="nav-item" data-page="history"><span>🕒</span> <span>History</span></li>
+      <li class="nav-item" data-page="settings"><span>⚙️</span> <span>Settings</span></li>
+    </ul>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main" id="mainContent">
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div class="card">
+        <div class="home-search-area">
+          <h2>⚖️ E‑Legal Advisor</h2>
+          <p><strong>Safety First – Know Your Rights (Pakistani Laws)</strong></p>
+          <div class="search-bar">
+            <input type="text" id="homeSearchInput" placeholder="Search laws or describe scenario...">
+            <button onclick="performHomeSearch()">🔍</button>
+          </div>
+          <div class="quick-keywords">
+            <button class="quick-keyword" onclick="quickSample('Harassment')">Harassment</button>
+            <button class="quick-keyword" onclick="quickSample('Assault')">Assault</button>
+            <button class="quick-keyword" onclick="quickSample('Domestic Violence')">Domestic Violence</button>
+            <button class="quick-keyword" onclick="quickSample('Cyberbullying')">Cyberbullying</button>
+          </div>
+          <p style="color:#888;margin-top:12px;">Type your query above or click a keyword to consult our AI.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONSULT -->
+    <div class="page" id="page-consult">
+      <div class="card">
+        <div class="card-header">🤖 Describe your legal situation</div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="scenarioInput" placeholder="E.g., someone is blackmailing me online...">
+        </div>
+        <button class="btn" style="margin-top:8px;" onclick="consultScenario()">Analyse Scenario</button>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="reasoning-panel" id="reasoningPanel" style="display:none;">
+          <h4>📚 Legal Reasoning Flow</h4>
+          <div class="reason-step"><strong>Premise</strong><br><span id="reasonPremise"></span></div>
+          <div class="reason-step"><strong>Relevant Law / Section</strong><br><span id="reasonLaw"></span></div>
+          <div class="reason-step"><strong>Application</strong><br><span id="reasonApp"></span></div>
+          <div class="reason-step"><strong>Suggested Outcome</strong><br><span id="reasonOutcome"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEARNER MODE -->
+    <div class="page" id="page-learner">
+      <div class="card">
+        <h2 style="color:#0a1930; margin-bottom:8px;">🎓 Learner Mode</h2>
+        <p style="color:#555; margin-bottom:20px;">Understand Pakistani law — explained simply, with real examples.</p>
+        <h3 style="margin-bottom:12px; color:#0a1930;">Law Categories</h3>
+        <div class="category-grid" id="categoryGrid">
+          <div class="category-card" onclick="showLawCategory('constitutional')">Constitutional Rights</div>
+          <div class="category-card" onclick="showLawCategory('criminal')">Criminal Law (PPC)</div>
+          <div class="category-card" onclick="showLawCategory('cyber')">Cyber Crime (PECA 2016)</div>
+          <div class="category-card" onclick="showLawCategory('family')">Family Law</div>
+          <div class="category-card" onclick="showLawCategory('property')">Property Law</div>
+          <div class="category-card" onclick="showLawCategory('labor')">Labor & Employment</div>
+          <div class="category-card" onclick="showLawCategory('consumer')">Consumer Protection</div>
+          <div class="category-card" onclick="showLawCategory('anticorruption')">Anti-Corruption</div>
+        </div>
+        <div id="categoryDetail"></div>
+      </div>
+    </div>
+
+    <!-- FIR DRAFT GENERATOR -->
+    <div class="page" id="page-firdraft">
+      <div class="card">
+        <div class="card-header">📄 FIR Draft Generator</div>
+        <div class="draft-tabs">
+          <button class="draft-tab active" onclick="switchDraftTab('create', event)">Create New Draft</button>
+          <button class="draft-tab" onclick="switchDraftTab('saved', event)">My Drafts</button>
+        </div>
+        <div id="createDraftPanel">
+          <div class="fir-field"><label>Document Type</label><select id="draftTypeSelector"><option>FIR Application</option><option>Complaint Letter</option><option>Affidavit</option><option>FIA Cyber Harassment Complaint</option><option>Workplace Harassment Complaint</option><option>Domestic Violence Protection Order</option></select></div>
+          <div class="fir-field"><label>Your Full Name</label><input type="text" id="draftFullName" placeholder="John Doe"></div>
+          <div class="fir-field"><label>Date & Time of Incident</label><input type="datetime-local" id="draftDateTime"></div>
+          <div class="fir-field"><label>Exact Location</label><input type="text" id="draftLocation" placeholder="Full address"></div>
+          <div class="fir-field"><label>Nature / Subject</label><input type="text" id="draftNature" placeholder="e.g. Theft, Assault, Cyber Fraud"></div>
+          <div class="fir-field"><label>Detailed Narrative</label><textarea id="draftNarrative" rows="5" placeholder="Chronological description of events..."></textarea></div>
+          <div class="fir-field"><label>Accused Details</label><textarea id="draftAccused" rows="3" placeholder="Names or descriptions..."></textarea></div>
+          <div class="fir-field"><label>Witnesses</label><textarea id="draftWitnesses" rows="3" placeholder="Names and contact info..."></textarea></div>
+          <div class="fir-field"><label>Available Evidence</label><textarea id="draftEvidence" rows="3" placeholder="CCTV, documents, items..."></textarea></div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn" onclick="generateCombinedDraft()">Generate Draft</button>
+            <button class="btn btn-outline" id="saveDraftBtn" style="display:none;" onclick="saveCurrentDraft()">💾 Save to My Drafts</button>
+          </div>
+          <div id="combinedDraftPreview" style="margin-top:16px; background:#f4f6fb; padding:16px; border-radius:12px; white-space:pre-wrap; display:none; font-family:monospace; font-size:0.85rem;"></div>
+        </div>
+        <div id="savedDraftsPanel" style="display:none;">
+          <h4>📁 Saved Drafts</h4>
+          <div id="savedDraftsList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HELPLINES -->
+    <div class="page" id="page-helplines">
+      <div class="card">
+        <h2 style="font-size:1.8rem;color:#0a1930;font-weight:700; margin-bottom:8px;">📞 Emergency Legal Contacts — Pakistan</h2>
+        <p style="color:#555; margin-bottom:20px;">Dial immediately in urgent legal or safety situations.</p>
+        <div class="helpline-card"><div><h3>FIA Cybercrime Wing</h3><p style="color:#666;">Federal Investigation Agency cybercrime complaint</p></div><div class="helpline-number">1991</div></div>
+        <div class="helpline-card"><div><h3>Police Emergency</h3><p style="color:#666;">Nationwide police emergency helpline</p></div><div class="helpline-number">15</div></div>
+        <div class="helpline-card"><div><h3>Rescue Service</h3><p style="color:#666;">Emergency rescue and medical services</p></div><div class="helpline-number">1122</div></div>
+        <div class="helpline-card"><div><h3>Women Helpline</h3><p style="color:#666;">24/7 support for women facing violence</p></div><div class="helpline-number">1043</div></div>
+      </div>
+    </div>
+
+    <!-- OFFLINE MODE -->
+    <div class="page" id="page-offline">
+      <div class="card">
+        <h2>📡 Offline Legal Search</h2>
+        <p>All legal data is stored locally for instant access.</p>
+        <input type="text" id="offlineQuery" placeholder="e.g., theft, FIR, harassment">
+        <button class="btn" onclick="offlineSearch()">Search Offline</button>
+        <div id="offlineResults" style="margin-top:16px;"></div>
+      </div>
+    </div>
+
+    <!-- RISK DETECTION -->
+    <div class="page" id="page-riskdetect">
+      <div class="card">
+        <h2>⚠️ Risk Detection & Alert System</h2>
+        <p>Describe your situation. We'll analyze the risk level.</p>
+        <textarea id="riskInput" rows="4" placeholder="e.g., Someone is threatening me online..."></textarea>
+        <button class="btn" onclick="detectRisk()">Analyse Risk</button>
+        <div id="riskResult" style="margin-top:16px;"></div>
+      </div>
+    </div>
+
+    <!-- QUIZ -->
+    <div class="page" id="page-quiz">
+      <div class="card">
+        <div class="card-header">📝 Legal Knowledge Quiz</div>
+        <select id="quizCategory" onchange="startQuiz()">
+          <option value="all">All Topics</option>
+          <option value="harassment">Harassment (PPC)</option>
+          <option value="cyber">Cybercrime (PECA)</option>
+          <option value="criminal">Criminal Law (PPC)</option>
+          <option value="family">Family Law</option>
+        </select>
+        <div id="quizArea" style="margin-top:16px;"></div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="page" id="page-history">
+      <div class="card">
+        <div class="card-header">🕒 Consultation History</div>
+        <div id="historyList"></div>
+        <button class="btn btn-outline" onclick="clearHistory()">Clear History</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="card">
+        <div class="card-header">⚙️ Settings</div>
+        <p>App version: 3.0</p>
+        <p>Supervisor: Ms. Abida Idrees</p>
+        <p style="color:#888;margin-top:12px;">This prototype is for educational purposes — not final legal advice.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // ========== LEGAL DATABASE ==========
+  const legalDB = [
+    { cat:"Harassment", sec:"354 PPC", desc:"Assault or criminal force to woman with intent to outrage her modesty.", punish:"Up to 2 years imprisonment, or fine, or both.", helpline:["1043","15"], keywords:["harassment","assault","modesty","women","force"] },
+    { cat:"Cyber", sec:"PECA 20/21", desc:"Online harassment/cyberstalking", punish:"Up to 3 years, fine 1M", helpline:["1991"], keywords:["online","blackmail","facebook","whatsapp","cyber","cyberbullying"] },
+    { cat:"Domestic Violence", sec:"DV Act", desc:"Protection against domestic abuse", punish:"Protection order violation: up to 1 year.", helpline:["1043"], keywords:["domestic","violence","family","abuse","husband","wife"] }
+  ];
+
+  // ========== NAVIGATION ==========
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      this.classList.add('active');
+      const page = this.dataset.page;
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(`page-${page}`).classList.add('active');
+      if (page === 'history') renderHistory();
+      if (page === 'consult' && !document.getElementById('chatMessages').innerHTML) initChat();
+      document.getElementById('sidebar').classList.remove('open');
+    });
+  });
+
+  function switchToPage(page) {
+    document.querySelector(`.nav-item[data-page="${page}"]`).click();
+  }
+
+  // Mobile toggle
+  document.getElementById('mobileToggle').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('open');
+  });
+
+  // ========== HOME SEARCH ==========
+  function performHomeSearch() {
+    const query = document.getElementById('homeSearchInput').value.trim();
+    if (!query) return alert('Please type a query.');
+    switchToPage('consult');
+    document.getElementById('scenarioInput').value = query;
+    setTimeout(() => consultScenario(), 200);
+  }
+  function quickSample(keyword) {
+    switchToPage('consult');
+    document.getElementById('scenarioInput').value = keyword;
+    setTimeout(() => consultScenario(), 200);
+  }
+
+  // ========== CHATBOT ==========
+  function initChat() {
+    document.getElementById('chatMessages').innerHTML = '';
+    addBotMsg('<strong>Assalam-o-Alaikum — I am your E‑Legal Advisor.</strong><br>Speak freely. I will listen and respond with legal guidance.');
+  }
+  function addBotMsg(text) {
+    const chat = document.getElementById('chatMessages');
+    chat.innerHTML += `<div class="message bot-msg"><div class="msg-bubble">${text}</div></div>`;
+    chat.scrollTop = chat.scrollHeight;
+    saveHistory('bot', text);
+  }
+  function addUserMsg(text) {
+    const chat = document.getElementById('chatMessages');
+    chat.innerHTML += `<div class="message user-msg"><div class="msg-bubble">${text}</div></div>`;
+    chat.scrollTop = chat.scrollHeight;
+    saveHistory('user', text);
+  }
+
+  function consultScenario() {
+    const input = document.getElementById('scenarioInput').value.trim();
+    if (!input) return;
+    addUserMsg(input);
+    document.getElementById('scenarioInput').value = '';
+
+    const { analysis, matched } = analyse(input);
+    addBotMsg(analysis);
+    showReasoningFlow(input, matched);
+  }
+
+  function analyse(text) {
+    const q = text.toLowerCase();
+    let matched = [];
+    legalDB.forEach(law => {
+      if (law.keywords.some(k => q.includes(k))) matched.push(law);
+    });
+    if (matched.length === 0) matched = legalDB;
+    let analysis = '<strong>Relevant Laws:</strong><br>';
+    matched.forEach(l => analysis += `• <b>${l.sec}</b> – ${l.desc}<br>   Punishment: ${l.punish}<br>   Helpline: ${l.helpline.join(', ')}<br><br>`);
+    analysis += 'Need a ready‑made document? Use the FIR Draft Generator.';
+    return { analysis, matched };
+  }
+
+  function showReasoningFlow(facts, matched) {
+    document.getElementById('reasoningPanel').style.display = 'block';
+    document.getElementById('reasonPremise').textContent = facts;
+    document.getElementById('reasonLaw').textContent = matched.map(l => l.sec).join(', ') || 'Multiple sections detected';
+    document.getElementById('reasonApp').textContent = 'Your described incident falls within the scope of the provisions cited.';
+    document.getElementById('reasonOutcome').textContent = 'Possible remedies include FIR registration, legal action, and helpline support.';
+  }
+
+  // ========== FIR DRAFT GENERATOR ==========
+  let generatedDraft = '';
+
+  function generateCombinedDraft() {
+    const type = document.getElementById('draftTypeSelector').value;
+    const fullName = document.getElementById('draftFullName').value || '[Full Name]';
+    const dateTime = document.getElementById('draftDateTime').value || '[Not specified]';
+    const location = document.getElementById('draftLocation').value || '[Not specified]';
+    const nature = document.getElementById('draftNature').value || type;
+    const narrative = document.getElementById('draftNarrative').value || '[No narrative provided]';
+    const accused = document.getElementById('draftAccused').value || 'Unknown';
+    const witnesses = document.getElementById('draftWitnesses').value || 'None';
+    const evidence = document.getElementById('draftEvidence').value || 'None';
+
+    let draft = `FIRST INFORMATION REPORT (FIR)
+
+To,
+The Station House Officer,
+${location.split(',')[0] || 'City Police Station'}
+
+Subject: FIR regarding ${nature}
+
+Respected Sir/Madam,
+
+I, ${fullName}, do hereby lodge this First Information Report:
+
+Date & Time: ${dateTime}
+Location: ${location}
+
+DETAILS OF INCIDENT:
+${narrative}
+
+ACCUSED DETAILS:
+${accused}
+
+WITNESSES:
+${witnesses}
+
+EVIDENCE:
+${evidence}
+
+I request registration of FIR under relevant laws.
+
+Signature: ${fullName}
+Date: ${new Date().toLocaleDateString()}`;
+
+    document.getElementById('combinedDraftPreview').textContent = draft;
+    document.getElementById('combinedDraftPreview').style.display = 'block';
+    document.getElementById('saveDraftBtn').style.display = 'inline-flex';
+    generatedDraft = draft;
+  }
+
+  function saveCurrentDraft() {
+    if (!generatedDraft) return;
+    const type = document.getElementById('draftTypeSelector').value;
+    const name = document.getElementById('draftFullName').value || 'Unknown';
+    let saved = JSON.parse(localStorage.getItem('savedDrafts') || '[]');
+    saved.push({ id: Date.now(), type, name, content: generatedDraft, createdAt: new Date().toLocaleString() });
+    localStorage.setItem('savedDrafts', JSON.stringify(saved));
+    alert('Draft saved!');
+    document.getElementById('saveDraftBtn').style.display = 'none';
+  }
+
+  function switchDraftTab(tab, event) {
+    document.querySelectorAll('.draft-tab').forEach(b => b.classList.remove('active'));
+    if(event) event.target.classList.add('active');
+    if (tab === 'create') {
+      document.getElementById('createDraftPanel').style.display = 'block';
+      document.getElementById('savedDraftsPanel').style.display = 'none';
+    } else {
+      document.getElementById('createDraftPanel').style.display = 'none';
+      document.getElementById('savedDraftsPanel').style.display = 'block';
+      renderSavedDrafts();
+    }
+  }
+
+  function renderSavedDrafts() {
+    const saved = JSON.parse(localStorage.getItem('savedDrafts') || '[]');
+    const list = document.getElementById('savedDraftsList');
+    if (saved.length === 0) { list.innerHTML = '<p>No saved drafts.</p>'; return; }
+    list.innerHTML = saved.map(d => `
+      <div class="saved-draft-item">
+        <div><strong>${d.type}</strong><br><small>${d.name} • ${d.createdAt}</small></div>
+        <div>
+          <button class="view-btn" onclick="viewSavedDraft(${d.id})">👁️ View</button>
+          <button onclick="deleteSavedDraft(${d.id})">🗑️ Delete</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function viewSavedDraft(id) {
+    const saved = JSON.parse(localStorage.getItem('savedDrafts') || '[]');
+    const draft = saved.find(d => d.id === id);
+    if (draft) {
+      document.getElementById('combinedDraftPreview').textContent = draft.content;
+      document.getElementById('combinedDraftPreview').style.display = 'block';
+      switchDraftTab('create');
+    }
+  }
+
+  function deleteSavedDraft(id) {
+    let saved = JSON.parse(localStorage.getItem('savedDrafts') || '[]');
+    saved = saved.filter(d => d.id !== id);
+    localStorage.setItem('savedDrafts', JSON.stringify(saved));
+    renderSavedDrafts();
+  }
+
+  // ========== LEARNER MODE ==========
+  const lawContent = {
+    constitutional: { title:"Constitutional Rights", desc:"Fundamental rights guaranteed by the Constitution of Pakistan 1973.", sections:[{sec:"Articles 8-28", title:"Fundamental Rights", desc:"Right to life, liberty, equality before law, freedom of speech."}] },
+    criminal: { title:"Criminal Law (PPC)", desc:"The Pakistan Penal Code 1860 defines offences.", sections:[{sec:"Sections 299-338", title:"Offences Affecting the Human Body", desc:"Murder, hurt, Qisas and Diyat.", penalty:"Death or imprisonment."}] },
+    cyber: { title:"Cyber Crime (PECA 2016)", desc:"Prevention of Electronic Crimes Act.", sections:[{sec:"Section 20", title:"Online harassment", desc:"Sharing private images without consent.", penalty:"Up to 3 years, fine 1M."}] },
+    family: { title:"Family Law", desc:"Marriage, divorce, custody.", sections:[{sec:"Muslim Family Laws Ordinance 1961", title:"Marriage registration", desc:"Regulates marriage and divorce."}] },
+    property: { title:"Property Law", desc:"Ownership, transfer, disputes.", sections:[{sec:"Transfer of Property Act 1882", title:"Sale, mortgage, lease", desc:"Transfer of property."}] },
+    labor: { title:"Labor & Employment Law", desc:"Worker rights.", sections:[{sec:"Industrial Relations Act 2012", title:"Trade unions", desc:"Collective bargaining rights."}] },
+    consumer: { title:"Consumer Protection", desc:"Defective products.", sections:[{sec:"Consumer Protection Act 2015", title:"Consumer rights", desc:"Complaints against defective goods."}] },
+    anticorruption: { title:"Anti-Corruption Laws", desc:"Prevention of corruption.", sections:[{sec:"NAO 1999", title:"NAB law", desc:"Investigation of corruption cases."}] }
+  };
+
+  window.showLawCategory = function(cat) {
+    const data = lawContent[cat];
+    if (!data) return;
+    const detailDiv = document.getElementById('categoryDetail');
+    let html = `<h2 style="color:#0a1930;">${data.title}</h2><p>${data.desc}</p>`;
+    data.sections.forEach(s => {
+      html += `<div class="topic-section"><h3>${s.sec}: ${s.title}</h3><p>${s.desc}</p>`;
+      if(s.penalty) html += `<div class="penalty-box"><strong>PENALTY:</strong> ${s.penalty}</div>`;
+      html += `</div>`;
+    });
+    detailDiv.innerHTML = html;
+  };
+
+  // ========== OFFLINE SEARCH ==========
+  window.offlineSearch = function() {
+    const query = document.getElementById('offlineQuery').value.trim().toLowerCase();
+    if (!query) return;
+    let results = [];
+    legalDB.forEach(law => {
+      if (law.desc.toLowerCase().includes(query) || law.sec.toLowerCase().includes(query) || law.keywords.some(k => k.includes(query)))
+        results.push(law);
+    });
+    let html = '';
+    if (results.length === 0) html = '<p>No offline results found.</p>';
+    else {
+      results.forEach(r => {
+        html += `<div class="card" style="margin-top:8px;"><strong>${r.sec}</strong>: ${r.desc}<br>Punishment: ${r.punish}<br>Helpline: ${r.helpline.join(', ')}</div>`;
+      });
+    }
+    document.getElementById('offlineResults').innerHTML = html;
+  };
+
+  // ========== RISK DETECTION ==========
+  window.detectRisk = function() {
+    const text = document.getElementById('riskInput').value.trim().toLowerCase();
+    if (!text) return;
+    let riskLevel = 'low';
+    const highRiskWords = ['kill', 'death', 'murder', 'bomb', 'threat', 'domestic violence', 'abuse', 'rape'];
+    const mediumRiskWords = ['harass', 'blackmail', 'stalking', 'danger'];
+    for (let w of highRiskWords) { if (text.includes(w)) { riskLevel = 'high'; break; } }
+    if (riskLevel !== 'high') {
+      for (let w of mediumRiskWords) { if (text.includes(w)) { riskLevel = 'medium'; break; } }
+    }
+    let response = '';
+    if (riskLevel === 'high') {
+      response = `<div class="risk-high"><strong>🚨 HIGH RISK DETECTED</strong><br>Immediate actions:<br>1. Call 15 (Police) or 1122 (Ambulance)<br>2. Preserve evidence<br>3. Contact helpline: Women 1043, FIA 1991<br>4. Generate FIR via FIR Draft Generator.</div>`;
+    } else if (riskLevel === 'medium') {
+      response = `<div class="risk-medium"><strong>⚠️ MEDIUM RISK</strong><br>Document everything and contact authorities.</div>`;
+    } else {
+      response = `<div class="risk-low"><strong>✅ LOW RISK</strong><br>Use the Consult feature for legal information.</div>`;
+    }
+    document.getElementById('riskResult').innerHTML = response;
+  };
+
+  // ========== QUIZ ==========
+  const quizQuestions = {
+    harassment: [{ q:"Section for verbal harassment?", opts:["354","509","302","420"], ans:0 }, { q:"Max punishment 354?", opts:["1yr","2yr","3yr","5yr"], ans:1 }],
+    cyber: [{ q:"Cyber helpline?", opts:["15","1991","1043","1122"], ans:1 }, { q:"PECA 20 covers?", opts:["Theft","Online harassment","Murder","None"], ans:1 }],
+    criminal: [{ q:"Which code defines criminal offences?", opts:["PPC","CPC","Constitution","None"], ans:0 }],
+    family: [{ q:"Muslim Family Laws Ordinance year?", opts:["1961","1973","1956","2000"], ans:0 }],
+    all: []
+  };
+  quizQuestions.all = [...quizQuestions.harassment, ...quizQuestions.cyber, ...quizQuestions.criminal, ...quizQuestions.family];
+
+  window.startQuiz = function() {
+    const cat = document.getElementById('quizCategory').value;
+    let questions = cat === 'all' ? quizQuestions.all : quizQuestions[cat] || [];
+    const area = document.getElementById('quizArea');
+    area.innerHTML = `<p>${questions.length} questions.</p>`;
+    questions.forEach((q, idx) => area.innerHTML += `<div style="margin:12px 0;"><strong>${idx+1}. ${q.q}</strong><br>${q.opts.map((o,i)=>`<label><input type="radio" name="q${idx}" value="${i}"> ${o}</label><br>`).join('')}</div>`);
+    area.innerHTML += `<button class="btn" onclick="submitQuiz()">Submit Quiz</button>`;
+  };
+
+  window.submitQuiz = function() {
+    const cat = document.getElementById('quizCategory').value;
+    let questions = cat === 'all' ? quizQuestions.all : quizQuestions[cat] || [];
+    let score = 0;
+    questions.forEach((q, idx) => {
+      const sel = document.querySelector(`input[name="q${idx}"]:checked`);
+      if (sel && parseInt(sel.value) === q.ans) score++;
+    });
+    alert(`Your score: ${score}/${questions.length}`);
+  };
+
+  // ========== HISTORY ==========
+  function saveHistory(type, content) {
+    let hist = JSON.parse(localStorage.getItem('elegalHistory') || '[]');
+    hist.push({ type, content, time: new Date().toLocaleString() });
+    if (hist.length > 50) hist = hist.slice(-50);
+    localStorage.setItem('elegalHistory', JSON.stringify(hist));
+  }
+  function renderHistory() {
+    const hist = JSON.parse(localStorage.getItem('elegalHistory') || '[]');
+    const list = document.getElementById('historyList');
+    if (hist.length === 0) { list.innerHTML = '<p>No history yet.</p>'; return; }
+    list.innerHTML = hist.slice().reverse().map(h => `<div style="padding:8px;border-bottom:1px solid #eee;"><strong>${h.type}:</strong> ${h.content.substring(0,100)}...<br><small>${h.time}</small></div>`).join('');
+  }
+  function clearHistory() {
+    localStorage.removeItem('elegalHistory');
+    renderHistory();
+  }
+
+  // Initialize
+  initChat();
+</script>
+</body>
+</html>
